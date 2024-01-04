@@ -8,3 +8,7 @@ end
 @safetestset "Basis" begin
     include("basis.jl")
 end
+
+@safetestset "Block" begin
+    include("block.jl")
+end
