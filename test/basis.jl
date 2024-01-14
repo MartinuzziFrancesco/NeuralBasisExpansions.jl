@@ -1,9 +1,9 @@
 using NBeats
 
-const backcast_size = 10
-const forecast_size = 5
-const degree_of_polynomial = 3
-const harmonics = 4
+backcast_size = 10
+forecast_size = 5
+degree_of_polynomial = 3
+harmonics = 2
 
 @testset "GenericBasis Tests" begin
     theta = rand(20, backcast_size + forecast_size)  # 20 time series, 15 values each
@@ -26,7 +26,7 @@ end
 end
 
 @testset "SeasonalityBasis Tests" begin
-    theta = rand(20, harmonics * 2)
+    theta = rand(20, 4)
 
     basis_function = SeasonalityBasis(harmonics, backcast_size, forecast_size)
     backcast, forecast = basis_function(theta)

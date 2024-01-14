@@ -46,27 +46,29 @@ end
 
 function SeasonalityBasis(harmonics::Int, backcast_size::Int, forecast_size::Int)
     frequency = vcat(
-        zeros(Float32, 1), collect(1:(harmonics / 2 * forecast_size)) / harmonics
+        zeros(Float32, 1), collect(harmonics:(harmonics / 2 * forecast_size-1)) / harmonics
     )
 
     backcast_grid = -2π * (collect(0:(backcast_size - 1)) / forecast_size) * frequency'
     forecast_grid = 2π * (collect(0:(forecast_size - 1)) / forecast_size) * frequency'
 
-    backcast_cos_template = cos.(backcast_grid')
-    backcast_sin_template = sin.(backcast_grid')
-    forecast_cos_template = cos.(forecast_grid')
-    forecast_sin_template = sin.(forecast_grid')
+    backcast_cos_template = cos.(backcast_grid)
+    backcast_sin_template = sin.(backcast_grid)
+    forecast_cos_template = cos.(forecast_grid)
+    forecast_sin_template = sin.(forecast_grid)
 
     return SeasonalityBasis(
-        backcast_cos_template,
-        backcast_sin_template,
-        forecast_cos_template,
-        forecast_sin_template,
+        transpose(backcast_cos_template),
+        transpose(backcast_sin_template),
+        transpose(forecast_cos_template),
+        transpose(forecast_sin_template),
     )
 end
 
 function (basis::SeasonalityBasis)(theta::AbstractArray)
     params_per_harmonic = size(theta, 2) ÷ 4
+    # backcast_harmonics_cos[b,t] := theta[:, (2 * params_per_harmonic + 1):(3 * params_per_harmonic)][b,p] *
+    #    basis.backcast_cos_template[p,t]
     backcast_harmonics_cos =
         theta[:, (2 * params_per_harmonic + 1):(3 * params_per_harmonic)] *
         basis.backcast_cos_template

@@ -2,6 +2,7 @@ module NBeats
 
 using Flux
 using LinearAlgebra
+using Tullio
 
 abstract type AbstractBlock end
 
