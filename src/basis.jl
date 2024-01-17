@@ -46,7 +46,8 @@ end
 
 function SeasonalityBasis(harmonics::Int, backcast_size::Int, forecast_size::Int)
     frequency = vcat(
-        zeros(Float32, 1), collect(harmonics:(harmonics / 2 * forecast_size-1)) / harmonics
+        zeros(Float32, 1),
+        collect(harmonics:(harmonics / 2 * forecast_size - 1)) / harmonics,
     )
 
     backcast_grid = -2π * (collect(0:(backcast_size - 1)) / forecast_size) * frequency'
@@ -67,20 +68,40 @@ end
 
 function (basis::SeasonalityBasis)(theta::AbstractArray)
     params_per_harmonic = size(theta, 2) ÷ 4
-    # backcast_harmonics_cos[b,t] := theta[:, (2 * params_per_harmonic + 1):(3 * params_per_harmonic)][b,p] *
-    #    basis.backcast_cos_template[p,t]
-    backcast_harmonics_cos =
-        theta[:, (2 * params_per_harmonic + 1):(3 * params_per_harmonic)] *
-        basis.backcast_cos_template
-    backcast_harmonics_sin =
-        theta[:, (3 * params_per_harmonic + 1):end] * basis.backcast_sin_template
+    @tullio backcast_harmonics_cos[b, t] :=
+        theta[:, (2 * params_per_harmonic + 1):(3 * params_per_harmonic)][b, 1] *
+        basis.backcast_cos_template[1, t]
+    @tullio backcast_harmonics_sin[b, t] :=
+        theta[:, (3 * params_per_harmonic + 1):end][b, 1] *
+        basis.backcast_sin_template[1, t]
     backcast = backcast_harmonics_sin + backcast_harmonics_cos
 
     forecast_harmonics_cos = theta[:, 1:params_per_harmonic] * basis.forecast_cos_template
-    forecast_harmonics_sin =
-        theta[:, (params_per_harmonic + 1):(2 * params_per_harmonic)] *
-        basis.forecast_sin_template
+    @tullio forecast_harmonics_sin :=
+        theta[:, (params_per_harmonic + 1):(2 * params_per_harmonic)][b, 1] *
+        basis.forecast_sin_template[1, t]
     forecast = forecast_harmonics_sin + forecast_harmonics_cos
 
     return backcast, forecast
 end
+
+function seasonality_basis(thetas, t)
+    p = size(thetas, 2)
+    p1 = div(p, 2)
+    p2 = p % 2 == 0 ? p1 : p1 + 1
+
+    s1 = [cos(2π * i * t) for i in 0:p1-1]
+    s2 = [sin(2π * i * t) for i in 0:p2-1]
+    S = hcat(s1, s2)
+
+    return thetas * S
+end
+
+struct Basis#Layer
+    backcast_linspace
+    forecast_linspace
+    units
+    thetas_dim
+    basis_function
+end
+
