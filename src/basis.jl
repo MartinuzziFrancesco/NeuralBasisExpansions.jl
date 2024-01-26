@@ -1,107 +1,59 @@
-struct GenericBasis
-    backcast_size::Int
-    forecast_size::Int
+function linear_space(backcast_length, forecast_length, is_forecast=true)
+    horizon = is_forecast ? forecast_length : backcast_length
+    return collect(range(1, stop=horizon, length=horizon) ./ horizon)
 end
 
-function (basis::GenericBasis)(theta::AbstractArray)
-    backcast = theta[:, 1:(basis.backcast_size)]
-    forecast = theta[:, (end - basis.forecast_size + 1):end]
-    return backcast, forecast
+function generic_basis(t, thetas)
+    lin = Dense(length(thetas), length(t)) ## to check!!
+    return Dense(thetas)
 end
 
-struct TrendBasis
-    polynomial_size::Int
-    backcast_time::Array{Float32,2}
-    forecast_time::Array{Float32,2}
-end
-
-function TrendBasis(degree_of_polynomial::Int, backcast_size::Int, forecast_size::Int)
-    polynomial_size = degree_of_polynomial + 1
-    backcast_time = hcat(
-        [
-            ((0:(backcast_size - 1)) / backcast_size) .^ i for i in 0:(degree_of_polynomial)
-        ]...,
-    )
-    forecast_time = hcat(
-        [
-            ((0:(forecast_size - 1)) / forecast_size) .^ i for i in 0:(degree_of_polynomial)
-        ]...,
-    )
-
-    return TrendBasis(polynomial_size, backcast_time', forecast_time')
-end
-
-function (basis::TrendBasis)(theta::AbstractArray)
-    backcast = theta[:, 1:(basis.polynomial_size)] * basis.backcast_time
-    forecast = theta[:, (end - basis.polynomial_size + 1):end] * basis.forecast_time
-    return backcast, forecast
-end
-
-struct SeasonalityBasis{T<:AbstractArray}
-    backcast_cos_template::T
-    backcast_sin_template::T
-    forecast_cos_template::T
-    forecast_sin_template::T
-end
-
-function SeasonalityBasis(harmonics::Int, backcast_size::Int, forecast_size::Int)
-    frequency = vcat(
-        zeros(Float32, 1),
-        collect(harmonics:(harmonics / 2 * forecast_size - 1)) / harmonics,
-    )
-
-    backcast_grid = -2π * (collect(0:(backcast_size - 1)) / forecast_size) * frequency'
-    forecast_grid = 2π * (collect(0:(forecast_size - 1)) / forecast_size) * frequency'
-
-    backcast_cos_template = cos.(backcast_grid)
-    backcast_sin_template = sin.(backcast_grid)
-    forecast_cos_template = cos.(forecast_grid)
-    forecast_sin_template = sin.(forecast_grid)
-
-    return SeasonalityBasis(
-        transpose(backcast_cos_template),
-        transpose(backcast_sin_template),
-        transpose(forecast_cos_template),
-        transpose(forecast_sin_template),
-    )
-end
-
-function (basis::SeasonalityBasis)(theta::AbstractArray)
-    params_per_harmonic = size(theta, 2) ÷ 4
-    @tullio backcast_harmonics_cos[b, t] :=
-        theta[:, (2 * params_per_harmonic + 1):(3 * params_per_harmonic)][b, 1] *
-        basis.backcast_cos_template[1, t]
-    @tullio backcast_harmonics_sin[b, t] :=
-        theta[:, (3 * params_per_harmonic + 1):end][b, 1] *
-        basis.backcast_sin_template[1, t]
-    backcast = backcast_harmonics_sin + backcast_harmonics_cos
-
-    forecast_harmonics_cos = theta[:, 1:params_per_harmonic] * basis.forecast_cos_template
-    @tullio forecast_harmonics_sin :=
-        theta[:, (params_per_harmonic + 1):(2 * params_per_harmonic)][b, 1] *
-        basis.forecast_sin_template[1, t]
-    forecast = forecast_harmonics_sin + forecast_harmonics_cos
-
-    return backcast, forecast
-end
-
-function seasonality_basis(thetas, t)
+function trend_basis(t, thetas)
     p = size(thetas, 2)
-    p1 = div(p, 2)
-    p2 = p % 2 == 0 ? p1 : p1 + 1
+    @assert p <= 4 "thetas_dim is too big."
+    T = reduce(hcat, [t.^i for i in 1:p])
 
-    s1 = [cos(2π * i * t) for i in 0:p1-1]
-    s2 = [sin(2π * i * t) for i in 0:p2-1]
-    S = hcat(s1, s2)
-
-    return thetas * S
+    return thetas * transpose(T)
 end
 
-struct Basis#Layer
-    backcast_linspace
-    forecast_linspace
-    units
-    thetas_dim
-    basis_function
+function seasonality_basis(t, thetas)
+    p = size(thetas, 2)
+    @assert p <= size(thetas, 1) "thetas_dim is too big."
+    p1, p2 = p ÷ 2, p ÷ 2 + (p % 2)
+
+    s1 = [cos.(2 * π * i .* t) for i in 1:p1]
+    s2 = [sin.(2 * π * i .* t) for i in 1:p2]
+    S = reduce(hcat, vcat(s1, s2))
+
+    return thetas * transpose(S)
 end
 
+struct BasisLayer
+    fc_b
+    fc_f
+    basis_function_b
+    basis_function_f
+end
+
+function BasisLayer(
+    layer_size::Int,
+    theta_size::Int,
+    basis_function;
+    backcast_length::Int=10,
+    forecast_length::Int=5,
+    share_thetas::Bool = false
+)
+    fc_b = Dense(layer_size, theta_size)
+    fc_f = share_thetas ? fc_b : Dense(layer_size, theta_size)
+    b_linspace = linear_space(backcast_length, forecast_length, false)
+    f_linspace = linear_space(backcast_length, forecast_length, true)
+    bf_b = basis_function $ b_linspace
+    bf_f = basis_function $ f_linspace
+    return BasisLayer(fc_b, fc_f, bf_b, bf_f)
+end
+
+function (bl::BasisLayer)(x)
+    backcast = basis_function_b(fc_b(x))
+    forecast = basis_function_f(fc_f(x))
+    return backcast, forecast
+end

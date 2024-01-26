@@ -2,12 +2,12 @@ module NBeats
 
 using Flux
 using LinearAlgebra
-using Tullio
+using PartialFunctions
 
 abstract type AbstractBlock end
 
 export NBeatsBlock, NBeatsNet
-export GenericBasis, TrendBasis, SeasonalityBasis
+export linear_space, trend_basis, seasonality_basis, generic_basis
 
 include("basis.jl")
 include("flux/block.jl")

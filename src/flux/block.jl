@@ -1,37 +1,36 @@
 struct NBeatsBlock{F}
     fc_stack::Chain
-    fc_b::Dense
-    fc_f::Dense
-    basis_layer_b::F #AbstractBasisLayer
-    basis_layer_f::F #AbstractBasisLayer
+    basis_layer::F #AbstractBasisLayer
 end
 
 function NBeatsBlock(
     input_size::Int,
     theta_size::Int,
-    basis_function,
     layer_size::Int,
+    basis_function;
     share_thetas::Bool=false,
-    num_layers::Int = 4
+    num_layers::Int = 4,
+    backcast_length::Int=10,
+    forecast_length::Int=5
 )
     layer_sequence = [Dense(input_size, layer_size, relu)]
     append!(layer_sequence, [Dense(layer_size, layer_size, relu) for _ in 2:num_layers])
     layers_chain = Chain(layer_sequence...)
-    fc_b = Dense(layer_size, theta_size)
-    fc_f = share_thetas ? fc_b : Dense(layer_size, theta_size)
-    basis_layer_b = Basis()
+    basis_layer = BasisLayer(
+        layer_size, theta_size;
+        backcast_length = backcast_length,
+        forecast_length = forecast_length,
+        share_thetas = share_thetas
+    )
 
     return NBeatsBlock(
         layers_chain,
-        fc_b, #bias = false
-        fc_f, #bias = false
-        basis_function)
+        basis_layer)
 end
 
 function (block::NBeatsBlock)(x::AbstractArray)
     block_input = block.fc_stack(x)
-    basis_parameters = block.basis_parameters(block_input)
-    return block.basis_function(basis_parameters)
+    backcast, forecast = block.basis_layer(block_input)
+    return backcast, forecast
 end
 
-struct 
