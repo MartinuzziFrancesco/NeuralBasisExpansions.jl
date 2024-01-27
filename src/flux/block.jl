@@ -4,7 +4,6 @@ struct NBeatsBlock{F}
 end
 
 function NBeatsBlock(
-    input_size::Int,
     theta_size::Int,
     layer_size::Int,
     basis_function;
@@ -13,11 +12,11 @@ function NBeatsBlock(
     backcast_length::Int=10,
     forecast_length::Int=5
 )
-    layer_sequence = [Dense(input_size, layer_size, relu)]
+    layer_sequence = [Dense(backcast_length, layer_size, relu)]
     append!(layer_sequence, [Dense(layer_size, layer_size, relu) for _ in 2:num_layers])
     layers_chain = Chain(layer_sequence...)
     basis_layer = BasisLayer(
-        layer_size, theta_size;
+        layer_size, theta_size, basis_function;
         backcast_length = backcast_length,
         forecast_length = forecast_length,
         share_thetas = share_thetas

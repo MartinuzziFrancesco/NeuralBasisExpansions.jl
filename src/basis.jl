@@ -4,29 +4,26 @@ function linear_space(backcast_length, forecast_length, is_forecast=true)
 end
 
 function generic_basis(t, thetas)
-    lin = Dense(length(thetas), length(t)) ## to check!!
-    return Dense(thetas)
+    lin = Dense(length(thetas), length(t))
+    return lin(thetas)
 end
 
 function trend_basis(t, thetas)
-    p = size(thetas, 2)
-    @assert p <= 4 "thetas_dim is too big."
-    T = reduce(hcat, [t.^i for i in 1:p])
-
-    return thetas * transpose(T)
+    theta_size = size(thetas, 2)
+    T = [t .^ i for i in 0:(theta_size-1)] # Create polynomial terms
+    T_matrix = hcat(T...) # Each row is t.^i
+    return T_matrix * transpose(thetas)
 end
 
 function seasonality_basis(t, thetas)
-    p = size(thetas, 2)
-    @assert p <= size(thetas, 1) "thetas_dim is too big."
-    p1, p2 = p ÷ 2, p ÷ 2 + (p % 2)
-
+    theta_size = size(thetas, 2)
+    p1, p2 = theta_size ÷ 2, theta_size ÷ 2 + (theta_size % 2)
     s1 = [cos.(2 * π * i .* t) for i in 1:p1]
     s2 = [sin.(2 * π * i .* t) for i in 1:p2]
-    S = reduce(hcat, vcat(s1, s2))
-
-    return thetas * transpose(S)
+    S_matrix = hcat(s1..., s2...) # Each row is a sinusoidal component
+    return S_matrix * transpose(thetas)
 end
+
 
 struct BasisLayer
     fc_b
@@ -53,7 +50,7 @@ function BasisLayer(
 end
 
 function (bl::BasisLayer)(x)
-    backcast = basis_function_b(fc_b(x))
-    forecast = basis_function_f(fc_f(x))
+    backcast = bl.basis_function_b(bl.fc_b(x))
+    forecast = bl.basis_function_f(bl.fc_f(x))
     return backcast, forecast
 end
