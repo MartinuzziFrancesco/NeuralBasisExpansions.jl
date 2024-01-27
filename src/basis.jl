@@ -4,26 +4,24 @@ function linear_space(backcast_length, forecast_length, is_forecast=true)
 end
 
 function generic_basis(t, thetas)
-    lin = Dense(length(thetas), length(t))
-    return lin(thetas)
+    #this should be different
 end
 
 function trend_basis(t, thetas)
-    theta_size = size(thetas, 2)
-    T = [t .^ i for i in 0:(theta_size-1)] # Create polynomial terms
-    T_matrix = hcat(T...) # Each row is t.^i
-    return T_matrix * transpose(thetas)
+    theta_size = size(thetas, 1)
+    T = [t .^ i for i in 0:(theta_size-1)]
+    T_matrix = hcat(T...)
+    return T_matrix * thetas
 end
 
 function seasonality_basis(t, thetas)
-    theta_size = size(thetas, 2)
+    theta_size = size(thetas, 1)
     p1, p2 = theta_size ÷ 2, theta_size ÷ 2 + (theta_size % 2)
     s1 = [cos.(2 * π * i .* t) for i in 1:p1]
     s2 = [sin.(2 * π * i .* t) for i in 1:p2]
-    S_matrix = hcat(s1..., s2...) # Each row is a sinusoidal component
-    return S_matrix * transpose(thetas)
+    S_matrix = hcat(s1..., s2...)
+    return S_matrix * thetas
 end
-
 
 struct BasisLayer
     fc_b
@@ -44,8 +42,15 @@ function BasisLayer(
     fc_f = share_thetas ? fc_b : Dense(layer_size, theta_size)
     b_linspace = linear_space(backcast_length, forecast_length, false)
     f_linspace = linear_space(backcast_length, forecast_length, true)
-    bf_b = basis_function $ b_linspace
-    bf_f = basis_function $ f_linspace
+
+    if basis_function == generic_basis
+        bf_b = Dense(theta_size, length(b_linspace))
+        bf_f = Dense(theta_size, length(f_linspace))
+    else
+        bf_b = basis_function $ b_linspace
+        bf_f = basis_function $ f_linspace
+    end
+
     return BasisLayer(fc_b, fc_f, bf_b, bf_f)
 end
 

@@ -4,13 +4,15 @@ using Flux
 using LinearAlgebra
 using PartialFunctions
 
-abstract type AbstractBlock end
+#abstract type AbstractBlock end
 
 export NBeatsBlock, NBeatsNet
-export linear_space, trend_basis, seasonality_basis, generic_basis, BasisLayer
+export BasisLayer
+export linear_space, trend_basis, seasonality_basis, generic_basis
+export split, train!, predict
 
 include("basis.jl")
-include("flux/block.jl")
-include("flux/net.jl")
+include("block.jl")
+include("net.jl")
 
 end
