@@ -12,4 +12,6 @@ deps/src/
 docs/build/
 docs/site/
 
+data/
+
 Manifest.toml

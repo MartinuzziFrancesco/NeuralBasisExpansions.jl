@@ -3,6 +3,7 @@ module NBeats
 using Flux
 using LinearAlgebra
 using PartialFunctions
+using Random
 
 #abstract type AbstractBlock end
 

@@ -32,6 +32,26 @@ function NBeatsNet(;
     return NBeatsNet(net_stacks, forecast_length, backcast_length)
 end
 
+function Base.show(io::IO, net::NBeatsNet)
+    println(io, "NBeatsNet Model")
+    println(io, "Number of stacks: ", length(net.stacks))
+    for (i, stack) in enumerate(net.stacks)
+        println(io, "  Stack $i:")
+        for (j, block) in enumerate(stack)
+            println(io, "    Block $j: NBeatsBlock")
+            println(io, "      Number of layers: ", length(block.fc_stack))
+            println(io, "      Layer size: ", size(block.fc_stack[1].weight, 2))
+            println(io, "      Theta size: ", size(block.basis_layer.fc_b.weight, 2))
+            println(io, "      Share weights: ", block.basis_layer.fc_b === block.basis_layer.fc_f)
+            println(io, "      Basis function: ", nameof(typeof(block.basis_layer.basis_function_b)))
+        end
+    end
+    println(io, "Forecast length: ", net.forecast_length)
+    println(io, "Backcast length: ", net.backcast_length)
+end
+
+Flux.@functor NBeatsNet
+
 function (net::NBeatsNet)(x::AbstractArray)
     backcast = x
     forecast = zeros(eltype(x), net.forecast_length, size(backcast, 2))
@@ -81,8 +101,8 @@ function train!(model::NBeatsNet,
             batch_y = y_train_batches[batch_id]
 
             # Gradient calculation and parameter update
-            grads = gradient(() -> loss_fn(model(batch_x)[2], batch_y), params(model))
-            Flux.Optimise.update!(optimizer, params(model), grads)
+            grads = gradient(() -> loss_fn(model(batch_x)[2], batch_y), Flux.params(model))
+            Flux.Optimise.update!(optimizer, Flux.params(model), grads)
 
             # Update loss
             total_loss += loss_fn(model(batch_x)[2], batch_y)

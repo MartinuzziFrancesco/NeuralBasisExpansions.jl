@@ -27,6 +27,9 @@ function NBeatsBlock(
         basis_layer)
 end
 
+Flux.@functor NBeatsBlock
+Flux.trainable(block::NBeatsBlock) = (block.fc_stack, block.basis_layer)
+
 function (block::NBeatsBlock)(x::AbstractArray)
     block_input = block.fc_stack(x)
     backcast, forecast = block.basis_layer(block_input)

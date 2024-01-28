@@ -24,26 +24,28 @@ function seasonality_basis(t, thetas)
 end
 
 struct BasisLayer
-    fc_b
-    fc_f
+    fc_b::Dense
+    fc_f::Dense
     basis_function_b
     basis_function_f
+    is_generic::Bool
 end
 
 function BasisLayer(
     layer_size::Int,
     theta_size::Int,
     basis_function;
-    backcast_length::Int=10,
-    forecast_length::Int=5,
+    backcast_length::Int = 10,
+    forecast_length::Int = 5,
     share_thetas::Bool = false
 )
     fc_b = Dense(layer_size, theta_size)
     fc_f = share_thetas ? fc_b : Dense(layer_size, theta_size)
     b_linspace = linear_space(backcast_length, forecast_length, false)
     f_linspace = linear_space(backcast_length, forecast_length, true)
+    is_generic = basis_function == generic_basis
 
-    if basis_function == generic_basis
+    if is_generic
         bf_b = Dense(theta_size, length(b_linspace))
         bf_f = Dense(theta_size, length(f_linspace))
     else
@@ -51,7 +53,17 @@ function BasisLayer(
         bf_f = basis_function $ f_linspace
     end
 
-    return BasisLayer(fc_b, fc_f, bf_b, bf_f)
+    return BasisLayer(fc_b, fc_f, bf_b, bf_f, is_generic)
+end
+
+Flux.@functor BasisLayer
+
+function Flux.trainable(bl::BasisLayer)
+    trainable_params = (bl.fc_b, bl.fc_f)
+    if bl.is_generic
+        trainable_params = (trainable_params..., bl.basis_function_b, bl.basis_function_f)
+    end
+    return trainable_params
 end
 
 function (bl::BasisLayer)(x)
