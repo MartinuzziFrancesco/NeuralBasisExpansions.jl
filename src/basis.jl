@@ -1,6 +1,6 @@
 function linear_space(backcast_length, forecast_length, is_forecast=true)
     horizon = is_forecast ? forecast_length : backcast_length
-    return collect(range(1, stop=horizon, length=horizon) ./ horizon)
+    return collect(range(1; stop=horizon, length=horizon) ./ horizon)
 end
 
 function generic_basis(t, thetas)
@@ -9,7 +9,7 @@ end
 
 function trend_basis(t, thetas)
     theta_size = size(thetas, 1)
-    T = [t .^ i for i in 0:(theta_size-1)]
+    T = [t .^ i for i in 0:(theta_size - 1)]
     T_matrix = hcat(T...)
     return T_matrix * thetas
 end
@@ -35,9 +35,9 @@ function BasisLayer(
     layer_size::Int,
     theta_size::Int,
     basis_function;
-    backcast_length::Int = 10,
-    forecast_length::Int = 5,
-    share_thetas::Bool = false
+    backcast_length::Int=10,
+    forecast_length::Int=5,
+    share_thetas::Bool=false,
 )
     fc_b = Dense(layer_size, theta_size)
     fc_f = share_thetas ? fc_b : Dense(layer_size, theta_size)
@@ -49,8 +49,8 @@ function BasisLayer(
         bf_b = Dense(theta_size, length(b_linspace))
         bf_f = Dense(theta_size, length(f_linspace))
     else
-        bf_b = basis_function $ b_linspace
-        bf_f = basis_function $ f_linspace
+        bf_b = basis_function$b_linspace
+        bf_f = basis_function$f_linspace
     end
 
     return BasisLayer(fc_b, fc_f, bf_b, bf_f, is_generic)

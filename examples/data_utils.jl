@@ -18,7 +18,7 @@ function download_m4()
     println("Downloading M4 Daily-test dataset...")
     Downloads.download(test_url, test_file_path)
 
-    println("Download completed!")
+    return println("Download completed!")
 end
 
 function get_m4_data(backcast_length, forecast_length, batch_size, is_training=true)
@@ -38,12 +38,12 @@ function get_m4_data(backcast_length, forecast_length, batch_size, is_training=t
 
         if is_training
             j = rand(backcast_length:(length(time_series_cleaned) - forecast_length + 1))
-            push!(x, time_series_cleaned[j - backcast_length: j - 1])
-            push!(y, time_series_cleaned[j: j + forecast_length - 1])
+            push!(x, time_series_cleaned[(j - backcast_length):(j - 1)])
+            push!(y, time_series_cleaned[j:(j + forecast_length - 1)])
         else
             for j in backcast_length:(length(time_series_cleaned) - forecast_length + 1)
-                push!(x, time_series_cleaned[j - backcast_length: j - 1])
-                push!(y, time_series_cleaned[j: j + forecast_length - 1])
+                push!(x, time_series_cleaned[(j - backcast_length):(j - 1)])
+                push!(y, time_series_cleaned[j:(j + forecast_length - 1)])
             end
         end
     end
@@ -52,8 +52,8 @@ function get_m4_data(backcast_length, forecast_length, batch_size, is_training=t
     y = reshape(reduce(vcat, y), :, length(y) ÷ forecast_length)
 
     # Split into batches
-    x_batches = [x[:, i:min(i+batch_size-1, end)] for i in 1:batch_size:size(x, 2)]
-    y_batches = [y[:, i:min(i+batch_size-1, end)] for i in 1:batch_size:size(y, 2)]
+    x_batches = [x[:, i:min(i + batch_size - 1, end)] for i in 1:batch_size:size(x, 2)]
+    y_batches = [y[:, i:min(i + batch_size - 1, end)] for i in 1:batch_size:size(y, 2)]
 
     return x_batches, y_batches
 end

@@ -5,17 +5,21 @@ using Plots
 
 # Generate a simple sine wave dataset
 function generate_sine_data(num_points, backcast_length, forecast_length)
-    x = sin.(range(0, stop=4π, length=num_points))
-    data = [(x[i:i+backcast_length-1], x[i+backcast_length:i+backcast_length+forecast_length-1])
-            for i in 1:num_points-backcast_length-forecast_length]
-    return Float32.(data)
+    x = Float32.(sin.(range(0; stop=4π, length=num_points)))
+    data = [
+        (
+            x[i:(i + backcast_length - 1)],
+            x[(i + backcast_length):(i + backcast_length + forecast_length - 1)],
+        ) for i in 1:(num_points - backcast_length - forecast_length)
+    ]
+    return data
 end
 
 function evaluate_predictions(y_true, y_pred)
-    mse = mean((y_true .- y_pred).^2)
+    mse = mean((y_true .- y_pred) .^ 2)
     mae = mean(abs.(y_true .- y_pred))
-    ss_res = sum((y_true .- y_pred).^2)
-    ss_tot = sum((y_true .- mean(y_true)).^2)
+    ss_res = sum((y_true .- y_pred) .^ 2)
+    ss_tot = sum((y_true .- mean(y_true)) .^ 2)
     r_squared = 1 - ss_res / ss_tot
 
     return mse, mae, r_squared
@@ -39,10 +43,9 @@ function batch_data(data, batch_size)
     return batches
 end
 
-
 # Model parameters
 forecast_length = 5
-backcast_length = 2*forecast_length
+backcast_length = 2 * forecast_length
 batch_size = 32
 hidden_units = 128
 theta_dims = (4, 8)
@@ -55,13 +58,13 @@ train_batches = batch_data(train_data, batch_size)
 test_batches = batch_data(test_data, batch_size)
 
 # Create the NBeatsNet model
-model = NBeatsNet(
+model = NBeatsNet(;
     stacks=[generic_basis, trend_basis],
     blocks_stacks=blocks_per_stack,
     forecast_length=forecast_length,
     backcast_length=backcast_length,
     thetas_dim=theta_dims,
-    hidden_units=hidden_units
+    hidden_units=hidden_units,
 )
 
 # Loss function and optimizer
@@ -72,8 +75,12 @@ optimizer = Flux.ADAM(0.001)
 epochs = 50
 for epoch in 1:epochs
     Flux.train!(loss_fn, Flux.params(model), train_batches, optimizer)
-    train_loss = mean([loss_fn(getindex(batch, 1), getindex(batch, 2)) for batch in train_batches])
-    test_loss = mean([loss_fn(getindex(batch, 1), getindex(batch, 2)) for batch in test_batches])
+    train_loss = mean([
+        loss_fn(getindex(batch, 1), getindex(batch, 2)) for batch in train_batches
+    ])
+    test_loss = mean([
+        loss_fn(getindex(batch, 1), getindex(batch, 2)) for batch in test_batches
+    ])
     println("Epoch $epoch: Train Loss = $train_loss, Test Loss = $test_loss")
 end
 
@@ -87,20 +94,18 @@ println("Mean Squared Error: $mse")
 println("Mean Absolute Error: $mae")
 println("R-squared: $r_squared")
 
-plot(y_true[:,end], label="True")
-plot!(y_pred[:,end], label="Predicted")
-
-
-
-
-
-
+plot(y_true[:, end]; label="True")
+plot!(y_pred[:, end]; label="Predicted")
 
 # Modify generate_sine_data if necessary to ensure data is in column vector format
 function generate_sine_data(num_points, backcast_length, forecast_length)
-    x = sin.(range(0, stop=4π, length=num_points))
-    data = [(x[i:i+backcast_length-1]', x[i+backcast_length:i+backcast_length+forecast_length-1]')
-            for i in 1:num_points-backcast_length-forecast_length]
+    x = sin.(range(0; stop=4π, length=num_points))
+    data = [
+        (
+            x[i:(i + backcast_length - 1)]',
+            x[(i + backcast_length):(i + backcast_length + forecast_length - 1)]',
+        ) for i in 1:(num_points - backcast_length - forecast_length)
+    ]
     return data
 end
 
@@ -111,22 +116,24 @@ data = generate_sine_data(1000, backcast_length, forecast_length)
 println("Backcast shape: ", size(first(data)[1]))
 println("Forecast shape: ", size(first(data)[2]))
 
-
 # Create the NBeatsNet model
-model = NBeatsNet(
+model = NBeatsNet(;
     stacks=[generic_basis, trend_basis],
     blocks_stacks=blocks_per_stack,
     forecast_length=forecast_length,
     backcast_length=backcast_length,
     thetas_dim=theta_dims,
-    hidden_units=hidden_units
+    hidden_units=hidden_units,
 )
 
 # Training loop with custom train! function
-train!(model, x_train, y_train,
+train!(
+    model,
+    x_train,
+    y_train;
     optimizer=Flux.ADAM(0.001),
     loss_fn=Flux.mse,
     epochs=10,
     batch_size=32,
-    validation_data=(x_test, y_test)
+    validation_data=(x_test, y_test),
 )

@@ -5,27 +5,29 @@ struct NBeatsNet
 end
 
 function NBeatsNet(;
-    stacks = [trend_basis, seasonality_basis],
-    blocks_stacks::Int = 3,
+    stacks=[trend_basis, seasonality_basis],
+    blocks_stacks::Int=3,
     forecast_length::Int=5,
     backcast_length::Int=10,
-    thetas_dim = (4, 8),
+    thetas_dim=(4, 8),
     share_weights::Bool=false,
-    hidden_units = 256
+    hidden_units=256,
 )
     net_stacks = Vector{Vector{NBeatsBlock}}()
 
     for (i, basis_function) in enumerate(stacks)
         theta_size = thetas_dim[i]  # Select theta_size from thetas_dim tuple
-        stack = [NBeatsBlock(
-            theta_size,
-            hidden_units,
-            basis_function;
-            share_thetas=share_weights,
-            num_layers=4,
-            backcast_length=backcast_length,
-            forecast_length=forecast_length
-        ) for _ in 1:blocks_stacks]
+        stack = [
+            NBeatsBlock(
+                theta_size,
+                hidden_units,
+                basis_function;
+                share_thetas=share_weights,
+                num_layers=4,
+                backcast_length=backcast_length,
+                forecast_length=forecast_length,
+            ) for _ in 1:blocks_stacks
+        ]
         push!(net_stacks, stack)
     end
 
@@ -42,12 +44,20 @@ function Base.show(io::IO, net::NBeatsNet)
             println(io, "      Number of layers: ", length(block.fc_stack))
             println(io, "      Layer size: ", size(block.fc_stack[1].weight, 2))
             println(io, "      Theta size: ", size(block.basis_layer.fc_b.weight, 2))
-            println(io, "      Share weights: ", block.basis_layer.fc_b === block.basis_layer.fc_f)
-            println(io, "      Basis function: ", nameof(typeof(block.basis_layer.basis_function_b)))
+            println(
+                io,
+                "      Share weights: ",
+                block.basis_layer.fc_b === block.basis_layer.fc_f,
+            )
+            println(
+                io,
+                "      Basis function: ",
+                nameof(typeof(block.basis_layer.basis_function_b)),
+            )
         end
     end
     println(io, "Forecast length: ", net.forecast_length)
-    println(io, "Backcast length: ", net.backcast_length)
+    return println(io, "Backcast length: ", net.backcast_length)
 end
 
 Flux.@functor NBeatsNet
@@ -72,20 +82,21 @@ function split(arr, size)
     while length(arr) > size
         slice_ = arr[1:size]
         push!(arrays, slice_)
-        arr = arr[(size+1):end]
+        arr = arr[(size + 1):end]
     end
     push!(arrays, arr)
     return arrays
 end
 
-function train!(model::NBeatsNet,
+function train!(
+    model::NBeatsNet,
     x_train,
     y_train;
     optimizer=Flux.ADAM(0.001),
     loss_fn=Flux.mse,
     epochs=10,
     batch_size=32,
-    validation_data = nothing
+    validation_data=nothing,
 )
     for epoch in 1:epochs
         # Split the training data into batches
