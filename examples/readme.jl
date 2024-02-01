@@ -1,7 +1,15 @@
+using Pkg: Pkg
+__DIR = @__DIR__
+Pkg.activate(".")
+Pkg.instantiate()
+Pkg.precompile()
+
 using NBeats
 using Flux
 using Statistics
 using Plots
+
+include("data_utils.jl")
 
 # Generate a simple sine wave dataset
 function generate_sine_data(num_points, backcast_length, forecast_length)
@@ -13,34 +21,6 @@ function generate_sine_data(num_points, backcast_length, forecast_length)
         ) for i in 1:(num_points - backcast_length - forecast_length)
     ]
     return data
-end
-
-function evaluate_predictions(y_true, y_pred)
-    mse = mean((y_true .- y_pred) .^ 2)
-    mae = mean(abs.(y_true .- y_pred))
-    ss_res = sum((y_true .- y_pred) .^ 2)
-    ss_tot = sum((y_true .- mean(y_true)) .^ 2)
-    r_squared = 1 - ss_res / ss_tot
-
-    return mse, mae, r_squared
-end
-
-# Split data into batches
-function batch_data(data, batch_size)
-    num_batches = ceil(Int, length(data) / batch_size)
-    batches = []
-
-    for i in 1:num_batches
-        start_idx = (i - 1) * batch_size + 1
-        end_idx = min(i * batch_size, length(data))
-
-        backcast_batch = hcat([data[j][1] for j in start_idx:end_idx]...)
-        forecast_batch = hcat([data[j][2] for j in start_idx:end_idx]...)
-
-        push!(batches, (backcast_batch, forecast_batch))
-    end
-
-    return batches
 end
 
 # Model parameters
