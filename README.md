@@ -4,6 +4,14 @@
 [![Coverage](https://codecov.io/gh/MartinuzziFrancesco/NBeats.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/MartinuzziFrancesco/NBeats.jl)
 [![Aqua](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
+Implementation of the NBeats model ([paper](https://arxiv.org/abs/1905.10437)) in Julia (Flux). To use the package please do the following, as the package is not yet in the general registry:
+```julia
+using Pkg
+Pkg.add("https://github.com/MartinuzziFrancesco/NBeats.jl")
+```
+The package is still undergoing heavy testing, expect unexpected behavior.
+
+
 Full sin example with helper functions is given in the `example` folder, under `readme.jl`.
 ```julia
 # Model parameters
