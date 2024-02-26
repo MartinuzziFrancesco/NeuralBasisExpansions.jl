@@ -4,7 +4,7 @@ Pkg.activate(".")
 Pkg.instantiate()
 Pkg.precompile()
 
-using NBeats
+using NeuralBasisExpansions
 using Flux
 using Statistics
 using Plots

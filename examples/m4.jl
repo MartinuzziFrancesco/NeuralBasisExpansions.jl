@@ -7,7 +7,7 @@ Pkg.precompile()
 using Downloads
 using CSV
 using DataFrames
-using NBeats
+using NeuralBasisExpansions
 
 include("data_utils.jl")
 download_m4()

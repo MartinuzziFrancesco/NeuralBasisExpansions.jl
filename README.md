@@ -1,13 +1,13 @@
 # NBeats
 
-[![Build Status](https://github.com/MartinuzziFrancesco/NBeats.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/MartinuzziFrancesco/NBeats.jl/actions/workflows/CI.yml?query=branch%3Amain)
-[![Coverage](https://codecov.io/gh/MartinuzziFrancesco/NBeats.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/MartinuzziFrancesco/NBeats.jl)
+[![Build Status](https://github.com/MartinuzziFrancesco/NeuralBasisExpansions.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/MartinuzziFrancesco/NeuralBasisExpansions.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/MartinuzziFrancesco/NeuralBasisExpansions.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/MartinuzziFrancesco/NeuralBasisExpansions.jl)
 [![Aqua](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 Implementation of the NBeats model ([paper](https://arxiv.org/abs/1905.10437)) in Julia (Flux). To use the package please do the following, as the package is not yet in the general registry:
 ```julia
 using Pkg
-Pkg.add("https://github.com/MartinuzziFrancesco/NBeats.jl")
+Pkg.add("https://github.com/MartinuzziFrancesco/NeuralBasisExpansions.jl")
 ```
 The package is still undergoing heavy testing, expect unexpected behavior.
 

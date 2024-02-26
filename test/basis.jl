@@ -1,4 +1,4 @@
-using NBeats
+using NeuralBasisExpansions
 
 const layer_size = 128
 const theta_size = 4

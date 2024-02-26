@@ -1,4 +1,4 @@
-module NBeats
+module NeuralBasisExpansions
 
 using Flux
 using LinearAlgebra
