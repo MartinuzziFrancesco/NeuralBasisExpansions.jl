@@ -1,15 +1,15 @@
-using Pkg #hide
-__DIR = @__DIR__ #hide
-pkg_io = open(joinpath(__DIR, "pkg.log"), "w") #hide
-Pkg.activate(__DIR; io=pkg_io) #hide
-Pkg.instantiate(; io=pkg_io) #hide
-Pkg.develop(; path=joinpath(__DIR, "..", ".."), io=pkg_io) #hide
-Pkg.precompile(; io=pkg_io) #hide
-close(pkg_io) #hide
+using Pkg: Pkg
+__DIR = @__DIR__
+Pkg.activate(".")
+Pkg.instantiate()
+Pkg.precompile()
 
-using Downloads, MLUtils, CSV, DataFrames, NeuralBasisExpansions
+using Downloads
+using CSV
+using DataFrames
+using NeuralBasisExpansions
+
 include("data_utils.jl")
-
 download_m4()
 
 forecast_length = 5

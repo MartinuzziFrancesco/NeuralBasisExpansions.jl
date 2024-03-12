@@ -1,0 +1,5 @@
+[deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
+MLUtils = "f1d291b0-491e-4a28-83b9-f70985020b54"
+NeuralBasisExpansions = "a223bdf2-3245-431e-97a4-fe6f454c7773"
