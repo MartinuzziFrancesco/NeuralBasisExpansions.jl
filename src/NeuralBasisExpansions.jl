@@ -7,7 +7,7 @@ using Random
 
 #abstract type AbstractBlock end
 
-export NBeatsBlock, NBeatsNet
+export NBeatsBlock, NBeats
 export BasisLayer
 export linear_space, trend_basis, seasonality_basis, generic_basis
 export split, train!, predict

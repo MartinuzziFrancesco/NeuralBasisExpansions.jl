@@ -1,10 +1,10 @@
-struct NBeatsNet
+struct NBeats
     stacks::Vector{Vector{NBeatsBlock}}
     forecast_length::Int
     backcast_length::Int
 end
 
-function NBeatsNet(;
+function NBeats(;
     stacks=[trend_basis, seasonality_basis],
     blocks_stacks::Int=3,
     forecast_length::Int=5,
@@ -31,10 +31,10 @@ function NBeatsNet(;
         push!(net_stacks, stack)
     end
 
-    return NBeatsNet(net_stacks, forecast_length, backcast_length)
+    return NBeats(net_stacks, forecast_length, backcast_length)
 end
 
-function Base.show(io::IO, net::NBeatsNet)
+function Base.show(io::IO, net::NBeats)
     println(io, "NBeatsNet Model")
     println(io, "Number of stacks: ", length(net.stacks))
     for (i, stack) in enumerate(net.stacks)
@@ -60,9 +60,9 @@ function Base.show(io::IO, net::NBeatsNet)
     return println(io, "Backcast length: ", net.backcast_length)
 end
 
-Flux.@functor NBeatsNet
+Flux.@functor NBeats
 
-function (net::NBeatsNet)(x::AbstractArray)
+function (net::NBeats)(x::AbstractArray)
     backcast = x
     forecast = zeros(eltype(x), net.forecast_length, size(backcast, 2))
 
@@ -89,7 +89,7 @@ function split(arr, size)
 end
 
 function train!(
-    model::NBeatsNet,
+    model::NBeats,
     x_train,
     y_train;
     optimizer=Flux.ADAM(0.001),
@@ -134,7 +134,7 @@ function train!(
     end
 end
 
-function predict(model::NBeatsNet, x, return_backcast=false)
+function predict(model::NBeats, x, return_backcast=false)
     backcast, forecast = model(x)
 
     # Handle 3D inputs
